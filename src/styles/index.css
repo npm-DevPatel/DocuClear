@@ -1,0 +1,73 @@
+@import './accessibility.css';
+@import './animations.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Semantic Mappings */
+    --color-page-bg: #F9FAFB;
+    /* neutral50 */
+    --color-card-bg: #FFFFFF;
+    --color-card-bg-alt: #F3F4F6;
+    /* neutral100 */
+    --color-text-primary: #111827;
+    /* neutral900 */
+    --color-text-secondary: #4B5563;
+    /* neutral600 */
+    --color-text-muted: #9CA3AF;
+    /* neutral400 */
+    --color-border: #E5E7EB;
+    /* neutral200 */
+    --color-border-focus: #2563EB;
+    /* brand.primary */
+    --color-interactive: #2563EB;
+    /* brand.primary */
+    --color-interactive-hover: #1D4ED8;
+  }
+
+  html.high-contrast {
+    --color-page-bg: #000000;
+    --color-card-bg: #0A0A0A;
+    --color-card-bg-alt: #111111;
+    --color-text-primary: #FFFFFF;
+    --color-text-secondary: #E5E7EB;
+    --color-text-muted: #9CA3AF;
+    --color-border: #FFFFFF;
+    --color-border-focus: #6699FF;
+    --color-interactive: #6699FF;
+    --color-interactive-hover: #99BBFF;
+  }
+
+  html {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  body {
+    background-color: var(--color-page-bg);
+    color: var(--color-text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  .hero-gradient {
+    background: linear-gradient(145deg,
+        #EFF6FF 0%,
+        /* blue-50 */
+        #F0FDF4 50%,
+        /* green-50 */
+        #FFFBEB 100%
+        /* amber-50 */
+      );
+  }
+
+  .prose-content {
+    max-width: 65ch;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

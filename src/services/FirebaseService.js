@@ -5,7 +5,19 @@
 //   Storage: 5GB storage, 1GB/day download
 //   Auth: Unlimited users
 
-import { db, storage, auth } from './firebase.config.js'; // Agent creates this config file
+import { db } from './firebase.config.js';
+import {
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  orderBy,
+  limit,
+  doc,
+  deleteDoc,
+  setDoc,
+  serverTimestamp
+} from 'firebase/firestore';
 
 /*
 FIRESTORE SECURITY RULES — Deploy these in Firebase Console:
@@ -37,15 +49,21 @@ service cloud.firestore {
  * @returns {Promise<string>} Firestore document ID
  */
 export async function saveDocumentToHistory(userId, result, documentName) {
-    // TODO (Teammate 3/Firebase):
-    // 1. Import addDoc, collection, serverTimestamp from 'firebase/firestore'
-    // 2. Target collection: db, 'users', userId, 'documents'
-    // 3. Document shape:
-    //    { name: documentName, createdAt: serverTimestamp(), summary: result.summary,
-    //      redFlags: result.redFlags, keyTerms: result.keyTerms, documentType: result.documentType }
-    // 4. Return the new document's .id
-
-    throw new Error('TODO: FirebaseService.saveDocumentToHistory not implemented');
+  try {
+    const historyRef = collection(db, 'users', userId, 'documents');
+    const docRef = await addDoc(historyRef, {
+      name: documentName,
+      createdAt: serverTimestamp(),
+      summary: result.summary,
+      redFlags: result.redFlags,
+      keyTerms: result.keyTerms,
+      documentType: result.documentType
+    });
+    return docRef.id;
+  } catch (error) {
+    console.error("Error saving document to history:", error);
+    throw error;
+  }
 }
 
 /**
@@ -54,8 +72,19 @@ export async function saveDocumentToHistory(userId, result, documentName) {
  * @returns {Promise<HistoryItem[]>}
  */
 export async function getDocumentHistory(userId) {
-    // TODO: query collection ordered by createdAt desc, limit 50
-    throw new Error('TODO: FirebaseService.getDocumentHistory not implemented');
+  try {
+    const historyRef = collection(db, 'users', userId, 'documents');
+    const q = query(historyRef, orderBy('createdAt', 'desc'), limit(50));
+    const querySnapshot = await getDocs(q);
+
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error("Error fetching document history:", error);
+    throw error;
+  }
 }
 
 /**
@@ -64,8 +93,13 @@ export async function getDocumentHistory(userId) {
  * @param {string} documentId
  */
 export async function deleteDocument(userId, documentId) {
-    // TODO: deleteDoc(doc(db, 'users', userId, 'documents', documentId))
-    throw new Error('TODO: FirebaseService.deleteDocument not implemented');
+  try {
+    const docRef = doc(db, 'users', userId, 'documents', documentId);
+    await deleteDoc(docRef);
+  } catch (error) {
+    console.error("Error deleting document:", error);
+    throw error;
+  }
 }
 
 /**
@@ -74,6 +108,11 @@ export async function deleteDocument(userId, documentId) {
  * @param {7|14|30|60|90} days - Auto-delete interval in days
  */
 export async function setAutoDeletePreference(userId, days) {
-    // TODO: setDoc to 'users/{userId}/settings/preferences' with { autoDeleteDays: days }
-    throw new Error('TODO: FirebaseService.setAutoDeletePreference not implemented');
+  try {
+    const userSettingsRef = doc(db, 'users', userId, 'settings', 'preferences');
+    await setDoc(userSettingsRef, { autoDeleteDays: days }, { merge: true });
+  } catch (error) {
+    console.error("Error setting auto-delete preference:", error);
+    throw error;
+  }
 }

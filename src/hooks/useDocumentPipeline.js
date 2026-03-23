@@ -4,6 +4,7 @@
 import { useAppContext, APP_ACTIONS } from './useAppContext';
 import { useNavigate } from 'react-router-dom';
 import { simplifyDocument } from '../services/GeminiService.js';
+import { processDocument } from '../services/OCRProcessor.js';
 import { detectDocumentTypeHint } from '../utils/textUtils.js';
 import { MOCK_EXTRACTED_TEXT } from '../utils/constants';
 
@@ -163,30 +164,32 @@ export function useDocumentPipeline() {
       dispatch({ type: APP_ACTIONS.SET_PROCESSING_STAGE, payload: 'validating' });
       dispatch({ type: APP_ACTIONS.SET_PROCESSING_PROGRESS, payload: 5 });
 
-      // ── STAGE 1: OCR ────────────────────────────────────────────────────────
+      // ── STAGE 2: OCR ─────────────────────────────────────────────────────────
       dispatch({ type: APP_ACTIONS.SET_PROCESSING_STAGE, payload: 'ocr' });
       dispatch({ type: APP_ACTIONS.SET_PROCESSING_PROGRESS, payload: 10 });
 
-      // ── TEAMMATE 2 HOOK ──────────────────────────────────────────────────
-      // Replace the mock block below with a real OCRProcessor call once ready:
-      //
-      //   import { OCRProcessor } from '../services/OCRService.js';
-      //   extractedText = await OCRProcessor.processDocument(file, (p) => {
-      //     dispatch({ type: APP_ACTIONS.SET_PROCESSING_PROGRESS, payload: Math.min(10 + p * 0.4, 48) });
-      //   });
-      //
-      // Until then, MOCK_EXTRACTED_TEXT is used so the full AI pipeline can be tested.
       let extractedText;
       try {
-        await new Promise(resolve => setTimeout(resolve, 800));
-        extractedText = file ? MOCK_EXTRACTED_TEXT : MOCK_EXTRACTED_TEXT;
+        if (file && file instanceof File) {
+          // Real OCR — processDocument routes to Tesseract (image), pdfjs (PDF), or mammoth (docx)
+          const ocrResult = await processDocument(file, (ocrProgress) => {
+            // Map OCR's 0–100 to pipeline range 10–50
+            const mapped = 10 + Math.round(ocrProgress * 0.4);
+            dispatch({ type: APP_ACTIONS.SET_PROCESSING_PROGRESS, payload: Math.min(mapped, 50) });
+          });
+          extractedText = ocrResult.text;
+        } else {
+          // Dev fallback: no File object (e.g. direct URL navigation)
+          await new Promise(resolve => setTimeout(resolve, 800));
+          extractedText = MOCK_EXTRACTED_TEXT;
+        }
       } catch (ocrError) {
         handlePipelineError('ocr', ocrError);
         return;
       }
 
-
       dispatch({ type: APP_ACTIONS.SET_PROCESSING_PROGRESS, payload: 50 });
+
 
       // ── LAYER 1 VALIDATION (§13.2) ──────────────────────────────────────────
       const textCheck = validateExtractedText(extractedText);

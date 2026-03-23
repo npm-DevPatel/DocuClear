@@ -7,9 +7,11 @@ import { createWorker } from 'tesseract.js';
 import * as pdfjsLib from 'pdfjs-dist';
 import mammoth from 'mammoth';
 
-// Point pdf.js worker at a CDN-hosted build (adjust version to match your pdfjs-dist install)
+// Point pdf.js worker at a CDN-hosted build — must match the installed pdfjs-dist major version.
+// Using unpkg so it tracks the exact installed version at build time.
 pdfjsLib.GlobalWorkerOptions.workerSrc =
-    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs';
+    `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 

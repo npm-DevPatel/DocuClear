@@ -5,7 +5,7 @@
 import { checkSoftLimit } from '../utils/costGuard.js';
 import { SYSTEM_INSTRUCTION } from '../utils/constants.js';
 
-const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1/models';
 const MODEL = 'gemini-1.5-flash';
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const ENDPOINT = `${GEMINI_API_BASE}/${MODEL}:generateContent?key=${API_KEY}`;

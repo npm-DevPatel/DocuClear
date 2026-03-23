@@ -37,7 +37,7 @@ function validateExtractedText(text) {
   // the OCR likely failed and returned noise.
   const alphanumCount = (trimmed.match(/[a-zA-Z0-9\s]/g) || []).length;
   const noiseRatio = 1 - (alphanumCount / trimmed.length);
-  if (noiseRatio > 0.40) {
+  if (noiseRatio > 0.60) {
     return {
       valid: false,
       category: 'unreadable',
@@ -199,6 +199,7 @@ export function useDocumentPipeline() {
       }
 
       dispatch({ type: APP_ACTIONS.SET_EXTRACTED_TEXT, payload: extractedText });
+      console.log('[Pipeline] Extracted text (first 100 chars):', extractedText.slice(0, 100) + '...');
 
       // ── STAGE 2: AI ANALYSIS ─────────────────────────────────────────────────
       dispatch({ type: APP_ACTIONS.SET_PROCESSING_STAGE, payload: 'ai' });

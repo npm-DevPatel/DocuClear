@@ -5,8 +5,8 @@
 import { checkSoftLimit } from '../utils/costGuard.js';
 import { SYSTEM_INSTRUCTION } from '../utils/constants.js';
 
-const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1/models';
-const MODEL = 'gemini-1.5-flash';
+const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+const MODEL = 'gemini-2.5-flash';
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const ENDPOINT = `${GEMINI_API_BASE}/${MODEL}:generateContent?key=${API_KEY}`;
 
@@ -105,22 +105,33 @@ ${languageNote}`.trim();
  * @param {string} systemInstruction - System-level persona and rules.
  * @returns {Promise<any>} Parsed JSON from the model's response.
  */
+/**
+ * Calls the Gemini API and returns parsed JSON.
+ * @param {Array} contents - The `contents` array in Gemini's format.
+ * @param {string} systemInstruction - System-level persona and rules.
+ * @returns {Promise<any>} Parsed JSON from the model's response.
+ */
 async function callGemini(contents, systemInstruction = SYSTEM_INSTRUCTION) {
   if (!API_KEY) {
     throw new Error('VITE_GEMINI_API_KEY is not configured. Add it to .env.local.');
   }
 
+  // BULLETPROOF FIX: Inject system instructions as the first conversation turn
+  // This bypasses the strict schema errors for system_instruction and responseMimeType
+  const safeContents = [
+    { role: 'user', parts: [{ text: `SYSTEM INSTRUCTIONS (Follow strictly):\n${systemInstruction}` }] },
+    { role: 'model', parts: [{ text: 'Understood. I will act as the advocate and only output the requested JSON format.' }] },
+    ...contents
+  ];
+
   const body = {
-    system_instruction: {
-      parts: [{ text: systemInstruction }],
-    },
-    contents,
+    contents: safeContents,
     generationConfig: {
-      temperature: 0.2,       // Low temperature = deterministic, factual output
+      temperature: 0.2,
       topP: 0.8,
       topK: 40,
-      maxOutputTokens: 2048,
-      responseMimeType: 'application/json', // Instructs Gemini to output valid JSON
+      maxOutputTokens: 4096, // Increased to prevent cut-offs
+      responseMimeType: 'application/json' // Forces strict JSON mode
     },
   };
 
@@ -151,16 +162,14 @@ async function callGemini(contents, systemInstruction = SYSTEM_INSTRUCTION) {
 
   const data = await response.json();
 
-  // Extract text from Gemini's nested response structure
   const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!rawText) {
     console.error('[GeminiService] Unexpected response shape:', JSON.stringify(data));
     throw new Error('The AI returned an unexpected response. Please try again.');
   }
 
-  // responseMimeType: 'application/json' means rawText should be clean JSON.
-  // Defensive strip in case of edge-case markdown leakage:
-  const cleaned = rawText.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+  // More aggressive markdown stripping just in case
+  const cleaned = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
 
   try {
     return JSON.parse(cleaned);
@@ -279,11 +288,18 @@ The user will now ask follow-up questions. Answer in plain Kenyan English at an 
   ];
 
   // For chat, we want plain text response, not JSON
+  // For chat, we want plain text response, not JSON
   if (!API_KEY) throw new Error('VITE_GEMINI_API_KEY is not configured.');
 
+  // Inject system instructions into contents to prevent 400 errors
+  const safeContents = [
+    { role: 'user', parts: [{ text: `SYSTEM INSTRUCTIONS:\n${SYSTEM_INSTRUCTION}` }] },
+    { role: 'model', parts: [{ text: 'Understood.' }] },
+    ...contents
+  ];
+
   const body = {
-    system_instruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-    contents,
+    contents: safeContents,
     generationConfig: {
       temperature: 0.4, // Slightly higher for conversational warmth
       maxOutputTokens: 512,

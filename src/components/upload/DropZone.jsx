@@ -52,11 +52,16 @@ export function DropZone({ onFileSelected, disabled = false, className }) {
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
+            onClick={() => {
+                if (!disabled) {
+                    document.getElementById('file-upload-input')?.click();
+                }
+            }}
             role="button"
             tabIndex={disabled ? -1 : 0}
             aria-disabled={disabled}
             onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
+                if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
                     document.getElementById('file-upload-input')?.click();
                 }
             }}

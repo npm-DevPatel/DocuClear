@@ -1,5 +1,7 @@
-// FULL IMPLEMENTATION REQUIRED BY AGENT
-import React, { createContext, useReducer } from 'react';
+// FULL IMPLEMENTATION — AI_Implementation_Plan.md §9
+// AppContext.jsx — wires setToastFunction for costGuard, adds SET_SWAHILI_LOADING action
+import React, { createContext, useReducer, useEffect, useCallback } from 'react';
+import { setToastFunction } from '../utils/costGuard.js';
 
 const initialState = {
     currentDocument: null,
@@ -11,6 +13,7 @@ const initialState = {
 
     activeLanguage: 'en',
     swahiliResult: null,
+    swahiliLoading: false,   // §6.2 — loading state for on-demand Swahili analysis
 
     chatHistory: [],
     chatLoading: false,
@@ -31,6 +34,7 @@ export const APP_ACTIONS = {
     SET_PROCESSING_ERROR: 'SET_PROCESSING_ERROR',
     SET_ACTIVE_LANGUAGE: 'SET_ACTIVE_LANGUAGE',
     SET_SWAHILI_RESULT: 'SET_SWAHILI_RESULT',
+    SET_SWAHILI_LOADING: 'SET_SWAHILI_LOADING',  // new — §6.2
     ADD_CHAT_MESSAGE: 'ADD_CHAT_MESSAGE',
     SET_CHAT_LOADING: 'SET_CHAT_LOADING',
     CLEAR_CHAT: 'CLEAR_CHAT',
@@ -61,7 +65,9 @@ function appReducer(state, action) {
         case APP_ACTIONS.SET_ACTIVE_LANGUAGE:
             return { ...state, activeLanguage: action.payload };
         case APP_ACTIONS.SET_SWAHILI_RESULT:
-            return { ...state, swahiliResult: action.payload };
+            return { ...state, swahiliResult: action.payload, swahiliLoading: false };
+        case APP_ACTIONS.SET_SWAHILI_LOADING:
+            return { ...state, swahiliLoading: action.payload };
         case APP_ACTIONS.ADD_CHAT_MESSAGE:
             return { ...state, chatHistory: [...state.chatHistory, action.payload] };
         case APP_ACTIONS.SET_CHAT_LOADING:
@@ -96,6 +102,7 @@ function appReducer(state, action) {
                 processingError: null,
                 activeLanguage: 'en',
                 swahiliResult: null,
+                swahiliLoading: false,
                 chatHistory: [],
             };
         default:
@@ -108,8 +115,21 @@ export const AppContext = createContext();
 export function AppProvider({ children }) {
     const [state, dispatch] = useReducer(appReducer, initialState);
 
+    // Stable addToast function for costGuard.js (§9)
+    const addToast = useCallback((toast) => {
+        dispatch({
+            type: APP_ACTIONS.ADD_TOAST,
+            payload: { ...toast, id: crypto.randomUUID() },
+        });
+    }, []);
+
+    // Wire addToast into costGuard module so it can fire toasts without a circular import
+    useEffect(() => {
+        setToastFunction(addToast);
+    }, [addToast]);
+
     return (
-        <AppContext.Provider value={{ state, dispatch }}>
+        <AppContext.Provider value={{ state, dispatch, addToast }}>
             {children}
         </AppContext.Provider>
     );

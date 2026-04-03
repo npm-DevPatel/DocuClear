@@ -23,6 +23,13 @@ const initialState = {
     modalContent: null,
 
     documentHistory: [],
+
+    // Accessibility Suite — for elderly/impaired users
+    accessibilitySettings: {
+        fontSize: 1.0,        // Multiplier: 1.0, 1.25, 1.5
+        darkMode: false,      // Manual dark mode toggle
+        highContrast: false,  // WCAG AAA stark colors
+    },
 };
 
 export const APP_ACTIONS = {
@@ -49,6 +56,8 @@ export const APP_ACTIONS = {
     REMOVE_FROM_HISTORY: 'REMOVE_FROM_HISTORY',
     RESET_PIPELINE: 'RESET_PIPELINE',
     SET_FULL_HISTORY: 'SET_FULL_HISTORY',
+    SET_ACCESSIBILITY_SETTING: 'SET_ACCESSIBILITY_SETTING',
+    RESET_ACCESSIBILITY: 'RESET_ACCESSIBILITY',
 };
 
 function appReducer(state, action) {
@@ -117,6 +126,19 @@ function appReducer(state, action) {
                 swahiliLoading: false,
                 activeLanguage: 'en',
             };
+        case APP_ACTIONS.SET_ACCESSIBILITY_SETTING:
+            return {
+                ...state,
+                accessibilitySettings: {
+                    ...state.accessibilitySettings,
+                    ...action.payload,
+                }
+            };
+        case APP_ACTIONS.RESET_ACCESSIBILITY:
+            return {
+                ...state,
+                accessibilitySettings: initialState.accessibilitySettings,
+            };
         default:
             return state;
     }
@@ -136,25 +158,28 @@ export function AppProvider({ children }) {
         return initial;
     });
 
-    // Automatically persist the results state to session storage
+    // Automatically persist both Results and Accessibility state
     useEffect(() => {
+        const cacheableState = {
+            activeLanguage: state.activeLanguage,
+            accessibilitySettings: state.accessibilitySettings,
+        };
+
         if (state.simplifiedResult) {
-            const cacheableState = {
-                simplifiedResult: state.simplifiedResult,
-                activeLanguage: state.activeLanguage,
-                swahiliResult: state.swahiliResult,
-                processingStage: state.processingStage, // allows routing to stay on results
-                // Only save names to avoid serializing massive File objects
-                currentDocuments: (state.currentDocuments || []).map(f => ({ name: f.name || 'Document' })),
-            };
-            sessionStorage.setItem('dc_results_cache', JSON.stringify(cacheableState));
+            cacheableState.simplifiedResult = state.simplifiedResult;
+            cacheableState.swahiliResult = state.swahiliResult;
+            cacheableState.processingStage = state.processingStage;
+            cacheableState.currentDocuments = (state.currentDocuments || []).map(f => ({ name: f.name || 'Document' }));
         }
+
+        sessionStorage.setItem('dc_results_cache', JSON.stringify(cacheableState));
     }, [
         state.simplifiedResult, 
         state.activeLanguage, 
         state.swahiliResult, 
         state.processingStage, 
-        state.currentDocuments
+        state.currentDocuments,
+        state.accessibilitySettings
     ]);
 
     const addToast = useCallback((toast) => {

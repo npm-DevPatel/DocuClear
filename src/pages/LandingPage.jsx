@@ -13,12 +13,12 @@ export function LandingPage() {
         <>
             <div className="flex flex-col gap-16 pb-12 w-full mx-auto items-center animate-page-enter">
                 {/* Hero Section */}
-                <section className="w-full text-center px-4 pt-12 pb-16 lg:pt-24 hero-gradient rounded-b-[3rem] shadow-sm">
-                    <h1 className="text-[length:var(--font-3xl)] md:text-5xl lg:text-6xl font-extrabold text-neutral-900 tracking-tight max-w-4xl mx-auto mb-6 leading-tight">
+                <section className="w-full text-center px-4 pt-12 pb-16 lg:pt-24 hero-gradient dark:from-slate-900 dark:to-slate-800 rounded-b-[3rem] shadow-sm">
+                    <h1 className="text-[length:var(--font-3xl)] md:text-5xl lg:text-6xl font-extrabold text-[color:var(--color-text-primary)] tracking-tight max-w-4xl mx-auto mb-6 leading-tight">
                         Understand Any Document, <br className="hidden sm:block" />
                         <span className="text-brand-primary">Instantly.</span>
                     </h1>
-                    <p className="text-[length:var(--font-lg)] md:text-[length:var(--font-xl)] text-neutral-600 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
+                    <p className="text-[length:var(--font-lg)] md:text-[length:var(--font-xl)] text-[color:var(--color-text-secondary)] max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
                         DocuClear translates complex legal, medical, and government jargon into plain, easy-to-read language. No more confusion.
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -41,12 +41,12 @@ export function LandingPage() {
                             { icon: BrainCircuit, title: '2. We Analyse', desc: 'Our AI scans for key details and hidden warnings.' },
                             { icon: Zap,          title: '3. Get Clarity', desc: 'Read a simplified version in plain English or Kiswahili.' },
                         ].map((item, i) => (
-                            <Card key={i} className="text-center p-8 border-none bg-brand-primaryLight/20 shadow-none hover:bg-brand-primaryLight/40 transition-colors">
-                                <div className="w-16 h-16 mx-auto bg-white rounded-2xl flex items-center justify-center text-brand-primary mb-6 shadow-sm">
+                            <Card key={i} className="text-center p-8 border-none bg-brand-primaryLight/10 dark:bg-brand-primaryLight/5 shadow-none hover:bg-brand-primaryLight/20 transition-colors">
+                                <div className="w-16 h-16 mx-auto bg-[color:var(--color-card-bg)] rounded-2xl flex items-center justify-center text-brand-primary mb-6 shadow-sm">
                                     <item.icon size={32} />
                                 </div>
-                                <h3 className="text-[length:var(--font-xl)] font-bold mb-3">{item.title}</h3>
-                                <p className="text-[length:var(--font-base)] text-neutral-600 font-medium leading-relaxed">{item.desc}</p>
+                                <h3 className="text-[length:var(--font-xl)] font-bold mb-3 text-[color:var(--color-text-primary)]">{item.title}</h3>
+                                <p className="text-[length:var(--font-base)] text-[color:var(--color-text-secondary)] font-medium leading-relaxed">{item.desc}</p>
                             </Card>
                         ))}
                     </div>

@@ -28,17 +28,50 @@
     --color-interactive-hover: #1D4ED8;
   }
 
+  /* ── Dark Mode Theme ──────────────────────────────────────────────────────
+     Applied when: <html class="dark-mode">
+     Activated by: AccessibilityController toggle (Night Mode in accessibility menu)
+     Light mode (:root above) stays completely untouched.
+  ──────────────────────────────────────────────────────────────────────── */
+  html.dark-mode {
+    --color-page-bg:       #0F172A;  /* slate-950 — deep navy background  */
+    --color-card-bg:       #1E293B;  /* slate-800 — card surfaces          */
+    --color-card-bg-alt:   #1A2332;  /* slate-850 — alternate card shade   */
+    --color-text-primary:  #F1F5F9;  /* slate-100 — primary readable text  */
+    --color-text-secondary:#CBD5E1;  /* slate-300 — secondary text         */
+    --color-text-muted:    #64748B;  /* slate-500 — muted / placeholder    */
+    --color-border:        #334155;  /* slate-700 — subtle borders         */
+    --color-border-focus:  #60A5FA;  /* blue-400 — focus rings             */
+    --color-interactive:   #60A5FA;  /* blue-400 — links & interactive     */
+    --color-interactive-hover: #93C5FD; /* blue-300 — hover state          */
+  }
+
+  /* ── High Contrast (light) ────────────────────────────────────────────── */
   html.high-contrast {
-    --color-page-bg: #000000;
-    --color-card-bg: #0A0A0A;
-    --color-card-bg-alt: #111111;
-    --color-text-primary: #FFFFFF;
-    --color-text-secondary: #E5E7EB;
-    --color-text-muted: #9CA3AF;
-    --color-border: #FFFFFF;
-    --color-border-focus: #6699FF;
-    --color-interactive: #6699FF;
+    --color-page-bg:       #000000;
+    --color-card-bg:       #0A0A0A;
+    --color-card-bg-alt:   #111111;
+    --color-text-primary:  #FFFFFF;
+    --color-text-secondary:#E5E7EB;
+    --color-text-muted:    #9CA3AF;
+    --color-border:        #FFFFFF;
+    --color-border-focus:  #6699FF;
+    --color-interactive:   #6699FF;
     --color-interactive-hover: #99BBFF;
+  }
+
+  /* ── Dark Mode + High Contrast combined ──────────────────────────────── */
+  html.dark-mode.high-contrast {
+    --color-page-bg:       #000000;
+    --color-card-bg:       #0A0A0A;
+    --color-card-bg-alt:   #0D0D0D;
+    --color-text-primary:  #FFFF00;   /* yellow-on-black for peak contrast */
+    --color-text-secondary:#FFFFFF;
+    --color-text-muted:    #FFFFFF;
+    --color-border:        #FFFF00;
+    --color-border-focus:  #FFFF00;
+    --color-interactive:   #FFFF00;
+    --color-interactive-hover: #FFF176;
   }
 
   html {
@@ -48,6 +81,8 @@
   body {
     background-color: var(--color-page-bg);
     color: var(--color-text-primary);
+    /* Smooth theme transition — only triggers during toggle, not page load */
+    transition: background-color 0.25s ease, color 0.25s ease;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -62,6 +97,15 @@
         /* green-50 */
         #FFFBEB 100%
         /* amber-50 */
+      );
+  }
+
+  /* Dark mode hero — deep navy-to-slate gradient */
+  html.dark-mode .hero-gradient {
+    background: linear-gradient(145deg,
+        #0F172A 0%,   /* slate-950 */
+        #1E293B 50%,  /* slate-800 */
+        #0F2030 100%  /* deep navy */
       );
   }
 

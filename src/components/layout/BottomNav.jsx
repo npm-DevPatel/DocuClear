@@ -17,7 +17,7 @@ export function BottomNav() {
 
     return (
         <nav
-            className="sm:hidden fixed bottom-0 inset-x-0 bg-white border-t border-neutral-200 pb-safe z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]"
+            className="sm:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-neutral-200 dark:border-slate-700 pb-safe z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]" style={{transition:'background-color 0.25s ease,border-color 0.25s ease'}}
             aria-label="Main navigation"
         >
             <div className="flex justify-around items-center h-20 px-2">
@@ -30,7 +30,7 @@ export function BottomNav() {
                         <button
                             key={item.name}
                             onClick={() => navigate(item.path)}
-                            className={`flex flex-col items-center justify-center w-full h-full min-h-[56px] focus:outline-none focus:bg-neutral-50 rounded-xl transition-colors ${isActive ? 'text-brand-primary' : 'text-neutral-500 hover:text-neutral-900'}`}
+                            className={`flex flex-col items-center justify-center w-full h-full min-h-[56px] focus:outline-none focus:bg-neutral-50 dark:focus:bg-slate-800 rounded-xl transition-colors ${isActive ? 'text-brand-primary' : 'text-neutral-500 dark:text-slate-400 hover:text-neutral-900 dark:hover:text-slate-100'}`}
                             aria-current={isActive ? 'page' : undefined}
                             aria-label={item.name}
                         >
@@ -69,7 +69,7 @@ export function DesktopNav() {
                             transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-brand-primary
                             ${isActive
                                 ? 'bg-brand-primaryLight/60 text-brand-primary'
-                                : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+                                : 'text-neutral-600 dark:text-slate-400 hover:bg-neutral-100 dark:hover:bg-slate-800 hover:text-neutral-900 dark:hover:text-slate-100'
                             }
                         `}
                         aria-current={isActive ? 'page' : undefined}

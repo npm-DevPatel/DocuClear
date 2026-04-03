@@ -5,7 +5,7 @@
 import React from 'react';
 import { Languages } from 'lucide-react';
 import { useAppContext, APP_ACTIONS } from '../../hooks/useAppContext';
-import { simplifyDocument } from '../../services/GeminiService.js';
+import { translateResult } from '../../services/GeminiService.js';
 
 export function TranslationToggle() {
     const { state, dispatch, addToast } = useAppContext();
@@ -22,10 +22,11 @@ export function TranslationToggle() {
             dispatch({ type: APP_ACTIONS.SET_SWAHILI_LOADING, payload: true });
 
             try {
-                const textToAnalyze = extractedText || simplifiedResult?.summary || '';
-                const docType = simplifiedResult?.documentType || 'general';
-                const result = await simplifyDocument(textToAnalyze, docType, 'sw');
-                dispatch({ type: APP_ACTIONS.SET_SWAHILI_RESULT, payload: result });
+                // MASSIVE TOKEN SAVINGS: Instead of throwing the massive raw OCR text back at Gemini
+                // for a full re-analysis, we just pass the small English JSON and ask for a direct translation.
+                if (!simplifiedResult) throw new Error('No English result to translate');
+                const translated = await translateResult(simplifiedResult);
+                dispatch({ type: APP_ACTIONS.SET_SWAHILI_RESULT, payload: translated });
             } catch (error) {
                 console.error('[TranslationToggle] Swahili analysis failed:', error);
                 // Swahili-language error toast as specified in §6.2

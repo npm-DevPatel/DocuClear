@@ -164,6 +164,14 @@ You MUST flag EVERY occurrence of the following as a Red Flag. Never let one sli
 - Any requirement to sign, respond, appear in person, or provide documents
 - Any clause that could result in loss of property, land, or rights if ignored
 
+SCAM AND FRAUD DETECTION — CRITICAL:
+You must actively look for signs that the document is a scam, fake, or extortion attempt.
+If you detect ANY of the following, you MUST immediately flag it as a HIGH SEVERITY Red Flag and explicitly tell the user "This might be a scam":
+- Government agencies (like KRA, DCI, Police) demanding payment to a personal M-Pesa number (e.g., "Send to 0712345678") instead of an official Paybill or Bank Account.
+- Unprofessional threats of immediate arrest or police action within unreasonable timeframes (e.g., "in the next 30 minutes").
+- Requests for bribes, "facilitation fees", or unofficial payments to clear records.
+- Fake or highly suspicious formatting for a supposedly official document.
+
 OUTPUT FORMAT — STRICT JSON ONLY:
 You must return a single valid JSON object. No markdown. No code fences. No preamble. No explanation outside the JSON. The frontend will parse your entire response as JSON using JSON.parse() — any non-JSON character will break the application.
 
@@ -181,9 +189,9 @@ Use clear, modern Kenyan Swahili. Avoid overly formal Swahili. Prefer "Shilingi"
 `.trim();
 
 export const GEMINI_CONFIG = {
-  model:            'gemini-1.5-flash',
+  model:            'gemini-2.5-flash',
   temperature:      0.2,
-  maxOutputTokens:  2048,
+  maxOutputTokens:  4096,
   responseMimeType: 'application/json',
 };
 

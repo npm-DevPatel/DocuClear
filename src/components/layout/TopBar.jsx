@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Menu, X, User, LogOut, Settings, Home } from 'lucide-react';
 import { ROUTES } from '../../utils/constants';
 import { useAuth, AUTH_ACTIONS } from '../../hooks/useAuth';
+import { DesktopNav } from './BottomNav';
 
 export function TopBar() {
     const location = useLocation();
@@ -44,6 +45,9 @@ export function TopBar() {
                             </span>
                         </div>
                     </div>
+
+                    {/* Desktop navigation — visible sm+ */}
+                    <DesktopNav />
 
                     {/* Right actions */}
                     <div className="flex items-center gap-2">

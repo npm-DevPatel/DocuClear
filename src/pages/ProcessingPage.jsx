@@ -11,10 +11,10 @@ export function ProcessingPage() {
     const [messageIndex, setMessageIndex] = useState(0);
 
     useEffect(() => {
-        if (!state.currentDocument) {
+        if (!state.currentDocuments || state.currentDocuments.length === 0) {
             navigate('/upload', { replace: true });
         }
-    }, [state.currentDocument, navigate]);
+    }, [state.currentDocuments, navigate]);
 
     useEffect(() => {
         const int = setInterval(() => {

@@ -130,7 +130,7 @@ async function callGemini(contents, systemInstruction = SYSTEM_INSTRUCTION) {
       temperature: 0.2,
       topP: 0.8,
       topK: 40,
-      maxOutputTokens: 4096, // Increased to prevent cut-offs
+      maxOutputTokens: 8192, // Increased to 8192 to prevent cut-offs for long medical/legal bills
       responseMimeType: 'application/json' // Forces strict JSON mode
     },
   };
@@ -174,8 +174,14 @@ async function callGemini(contents, systemInstruction = SYSTEM_INSTRUCTION) {
   try {
     return JSON.parse(cleaned);
   } catch (parseError) {
-    console.error('[GeminiService] JSON parse failed. Raw response:', rawText);
-    throw new Error('The AI response could not be understood. Please try analyzing the document again.');
+    console.warn('[GeminiService] Normal parse failed, attempting repair of truncated JSON...');
+    const repaired = repairTruncatedJSON(cleaned);
+    if (repaired && repaired.summary) {
+        console.log('[GeminiService] Successfully salvaged truncated JSON.');
+        return repaired;
+    }
+    console.error('[GeminiService] JSON parse and repair failed. Raw response:', rawText);
+    throw new Error('The AI response could not be understood due to truncation. Please try analyzing a smaller document.');
   }
 }
 
@@ -248,6 +254,36 @@ export async function simplifyDocument(rawText, documentType = 'general', langua
     oneSentenceSummary: (parsed.summary ?? '').split('.')[0] + '.',
     originalLength: rawText.length,
     simplifiedLength: (parsed.summary ?? '').length,
+  };
+}
+
+/**
+ * Translates an existing DocuClearAIResult to Swahili without re-processing the massive raw OCR text.
+ * This saves over 90% of API tokens during translation.
+ * 
+ * @param {DocuClearAIResult} englishResult 
+ * @returns {Promise<DocuClearAIResult>}
+ */
+export async function translateResult(englishResult) {
+  checkSoftLimit();
+
+  const prompt = `You are a professional Kenyan Swahili translator.
+Take the following JSON object and translate ALL the string values (like summary, title, description, and nextSteps) into clear, modern Kenyan Swahili.
+CRITICAL INSTRUCTION: Return ONLY a valid JSON object. Do not change ANY of the JSON keys (they must remain strictly in English: "summary", "redFlags", "nextSteps", etc.). Only translate the text meant for the user to read. Do not change codes like "high" or "medium".
+
+JSON TO TRANSLATE:
+${JSON.stringify(englishResult, null, 2)}`;
+
+  const contents = [{ role: 'user', parts: [{ text: prompt }] }];
+  const parsed = await callGemini(contents, 'Translate the string values of the provided JSON into Swahili, returning identical JSON structure.');
+
+  // Preserve technical fields, merge translated ones
+  return {
+    ...englishResult,
+    summary: parsed.summary ?? englishResult.summary,
+    redFlags: Array.isArray(parsed.redFlags) ? parsed.redFlags : englishResult.redFlags,
+    keyTerms: Array.isArray(parsed.keyTerms) ? parsed.keyTerms : englishResult.keyTerms,
+    nextSteps: Array.isArray(parsed.nextSteps) ? parsed.nextSteps : englishResult.nextSteps,
   };
 }
 

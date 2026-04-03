@@ -46,17 +46,33 @@ service cloud.firestore {
  */
 export async function saveDocumentToHistory(userId, result, documentName) {
   const colRef = collection(db, 'users', userId, 'documents');
-  const docRef = await addDoc(colRef, {
+  
+  // Strip any undefined values to prevent Firestore crashes
+  const safeData = {
     name: documentName,
     createdAt: serverTimestamp(),
-    summary: result.summary,
-    redFlags: result.redFlags,
-    keyTerms: result.keyTerms,
+    summary: result.summary || '',
+    redFlags: result.redFlags || [],
     nextSteps: result.nextSteps || [],
-    documentType: result.documentType,
-    originalLength: result.originalLength,
-    simplifiedLength: result.simplifiedLength,
-  });
+    documentType: result.documentType || 'general',
+    originalLength: result.originalLength || 0,
+    simplifiedLength: result.simplifiedLength || 0,
+  };
+  
+  if (result.keyTerms) safeData.keyTerms = result.keyTerms;
+
+  // Add a strict 3-second timeout. If Firestore is blocked by an ad-blocker
+  // (ERR_BLOCKED_BY_CLIENT), the Firebase SDK often queues writes and hangs
+  // the promise indefinitely. We must force a failure so the UI can proceed.
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('FIRESTORE_TIMEOUT')), 3000)
+  );
+
+  const docRef = await Promise.race([
+    addDoc(colRef, safeData),
+    timeoutPromise
+  ]);
+  
   return docRef.id;
 }
 
@@ -122,7 +138,7 @@ export async function saveChatMessage(userId, documentId, message, language = 'e
 
 /**
  * Retrieves the last N chat messages from Firestore for memory injection.
- * Called by useDocumentPipeline.js before each askDocumentQuestion() call.
+ * Called by useDocumentPipeline.js or ChatPage before each askDocumentQuestion() call.
  *
  * @param {string} userId
  * @param {string} documentId
@@ -130,12 +146,27 @@ export async function saveChatMessage(userId, documentId, message, language = 'e
  * @returns {Promise<Array<{role: string, content: string}>>}
  */
 export async function getRecentChatHistory(userId, documentId, limitCount = 5) {
-  const messagesRef = collection(db, 'users', userId, 'documents', documentId, 'messages');
-  const q = query(messagesRef, orderBy('timestamp', 'desc'), limit(limitCount));
-  const snapshot = await getDocs(q);
+  try {
+    const messagesRef = collection(db, 'users', userId, 'documents', documentId, 'messages');
+    const q = query(messagesRef, orderBy('timestamp', 'desc'), limit(limitCount));
+    
+    // Add a strict 2-second timeout to prevent the UI from locking up
+    // if Firestore reads are being blocked by an ad-blocker.
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('FIRESTORE_TIMEOUT')), 2000)
+    );
 
-  // Reverse to get chronological order (oldest first, for context injection)
-  return snapshot.docs
-    .map(d => ({ role: d.data().role, content: d.data().content }))
-    .reverse();
+    const snapshot = await Promise.race([
+      getDocs(q),
+      timeoutPromise
+    ]);
+
+    // Reverse to get chronological order (oldest first, for context injection)
+    return snapshot.docs
+      .map(d => ({ role: d.data().role, content: d.data().content }))
+      .reverse();
+  } catch (error) {
+    console.warn('[FirebaseService] getRecentChatHistory failed or timed out. Defaulting to empty.', error);
+    return [];
+  }
 }

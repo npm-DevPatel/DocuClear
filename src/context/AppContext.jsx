@@ -4,7 +4,7 @@ import React, { createContext, useReducer, useEffect, useCallback } from 'react'
 import { setToastFunction } from '../utils/costGuard.js';
 
 const initialState = {
-    currentDocument: null,
+    currentDocuments: [],          // Array of Files (max 3)
     extractedText: null,
     simplifiedResult: null,
     processingStage: 'idle',
@@ -13,7 +13,7 @@ const initialState = {
 
     activeLanguage: 'en',
     swahiliResult: null,
-    swahiliLoading: false,   // §6.2 — loading state for on-demand Swahili analysis
+    swahiliLoading: false,
 
     chatHistory: [],
     chatLoading: false,
@@ -26,7 +26,9 @@ const initialState = {
 };
 
 export const APP_ACTIONS = {
-    SET_DOCUMENT: 'SET_DOCUMENT',
+    SET_DOCUMENTS: 'SET_DOCUMENTS',       // replaces SET_DOCUMENT
+    SET_DOCUMENT: 'SET_DOCUMENT',         // kept for legacy callers
+    REMOVE_DOCUMENT: 'REMOVE_DOCUMENT',   // remove one file by index
     SET_EXTRACTED_TEXT: 'SET_EXTRACTED_TEXT',
     SET_SIMPLIFIED_RESULT: 'SET_SIMPLIFIED_RESULT',
     SET_PROCESSING_STAGE: 'SET_PROCESSING_STAGE',
@@ -36,6 +38,7 @@ export const APP_ACTIONS = {
     SET_SWAHILI_RESULT: 'SET_SWAHILI_RESULT',
     SET_SWAHILI_LOADING: 'SET_SWAHILI_LOADING',  // new — §6.2
     ADD_CHAT_MESSAGE: 'ADD_CHAT_MESSAGE',
+    SET_CHAT_HISTORY: 'SET_CHAT_HISTORY',
     SET_CHAT_LOADING: 'SET_CHAT_LOADING',
     CLEAR_CHAT: 'CLEAR_CHAT',
     ADD_TOAST: 'ADD_TOAST',
@@ -50,8 +53,15 @@ export const APP_ACTIONS = {
 
 function appReducer(state, action) {
     switch (action.type) {
+        case APP_ACTIONS.SET_DOCUMENTS:
+            return { ...state, currentDocuments: Array.isArray(action.payload) ? action.payload : [action.payload].filter(Boolean) };
         case APP_ACTIONS.SET_DOCUMENT:
-            return { ...state, currentDocument: action.payload };
+            // Legacy: wrap single file into the array
+            return { ...state, currentDocuments: action.payload ? [action.payload] : [] };
+        case APP_ACTIONS.REMOVE_DOCUMENT: {
+            const updated = state.currentDocuments.filter((_, i) => i !== action.payload);
+            return { ...state, currentDocuments: updated };
+        }
         case APP_ACTIONS.SET_EXTRACTED_TEXT:
             return { ...state, extractedText: action.payload };
         case APP_ACTIONS.SET_SIMPLIFIED_RESULT:
@@ -70,6 +80,8 @@ function appReducer(state, action) {
             return { ...state, swahiliLoading: action.payload };
         case APP_ACTIONS.ADD_CHAT_MESSAGE:
             return { ...state, chatHistory: [...state.chatHistory, action.payload] };
+        case APP_ACTIONS.SET_CHAT_HISTORY:
+            return { ...state, chatHistory: action.payload };
         case APP_ACTIONS.SET_CHAT_LOADING:
             return { ...state, chatLoading: action.payload };
         case APP_ACTIONS.CLEAR_CHAT:
@@ -92,18 +104,18 @@ function appReducer(state, action) {
         case APP_ACTIONS.SET_FULL_HISTORY:
             return { ...state, documentHistory: action.payload };
         case APP_ACTIONS.RESET_PIPELINE:
+            sessionStorage.removeItem('dc_results_cache');
             return {
                 ...state,
-                currentDocument: null,
+                currentDocuments: [],
                 extractedText: null,
                 simplifiedResult: null,
                 processingStage: 'idle',
                 processingProgress: 0,
                 processingError: null,
-                activeLanguage: 'en',
                 swahiliResult: null,
                 swahiliLoading: false,
-                chatHistory: [],
+                activeLanguage: 'en',
             };
         default:
             return state;
@@ -113,17 +125,46 @@ function appReducer(state, action) {
 export const AppContext = createContext();
 
 export function AppProvider({ children }) {
-    const [state, dispatch] = useReducer(appReducer, initialState);
+    const [state, dispatch] = useReducer(appReducer, initialState, (initial) => {
+        // Hydrate state from session storage to prevent loss on refresh
+        try {
+            const cached = sessionStorage.getItem('dc_results_cache');
+            if (cached) {
+                return { ...initial, ...JSON.parse(cached) };
+            }
+        } catch { /* ignore */ }
+        return initial;
+    });
 
-    // Stable addToast function for costGuard.js (§9)
+    // Automatically persist the results state to session storage
+    useEffect(() => {
+        if (state.simplifiedResult) {
+            const cacheableState = {
+                simplifiedResult: state.simplifiedResult,
+                activeLanguage: state.activeLanguage,
+                swahiliResult: state.swahiliResult,
+                processingStage: state.processingStage, // allows routing to stay on results
+                // Only save names to avoid serializing massive File objects
+                currentDocuments: (state.currentDocuments || []).map(f => ({ name: f.name || 'Document' })),
+            };
+            sessionStorage.setItem('dc_results_cache', JSON.stringify(cacheableState));
+        }
+    }, [
+        state.simplifiedResult, 
+        state.activeLanguage, 
+        state.swahiliResult, 
+        state.processingStage, 
+        state.currentDocuments
+    ]);
+
     const addToast = useCallback((toast) => {
-        dispatch({
-            type: APP_ACTIONS.ADD_TOAST,
-            payload: { ...toast, id: crypto.randomUUID() },
-        });
+        const id = Date.now().toString();
+        dispatch({ type: APP_ACTIONS.ADD_TOAST, payload: { ...toast, id } });
+        setTimeout(() => {
+            dispatch({ type: APP_ACTIONS.REMOVE_TOAST, payload: id });
+        }, toast.duration || 5000);
     }, []);
 
-    // Wire addToast into costGuard module so it can fire toasts without a circular import
     useEffect(() => {
         setToastFunction(addToast);
     }, [addToast]);

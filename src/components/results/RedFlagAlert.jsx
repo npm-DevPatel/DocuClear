@@ -1,10 +1,15 @@
-import React from 'react';
-import { AlertTriangle, Clock, Activity, ShieldAlert, DollarSign } from 'lucide-react';
+import React, { useState } from 'react';
+import { AlertTriangle, Clock, Activity, ShieldAlert, DollarSign, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { formatDisplayDate } from '../../utils/dateUtils';
 
 export function RedFlagAlert({ flags = [] }) {
+    const [showAll, setShowAll] = useState(false);
+
     if (!flags || flags.length === 0) return null;
+
+    const visibleFlags = showAll ? flags : flags.slice(0, 2);
+    const hasMore = flags.length > 2;
 
     const getIcon = (type) => {
         switch (type) {
@@ -35,7 +40,7 @@ export function RedFlagAlert({ flags = [] }) {
             </div>
 
             <ul className="space-y-3">
-                {flags.map((flag, idx) => (
+                {visibleFlags.map((flag, idx) => (
                     <li key={idx} className={getSeverityStyle(flag.severity)}>
                         <span className="flex-shrink-0">{getIcon(flag.type)}</span>
                         <div className="flex-1">
@@ -48,10 +53,22 @@ export function RedFlagAlert({ flags = [] }) {
                                 </p>
                             )}
                         </div>
-                        {/* Consumer could render CalendarAddButton here by passing as children to a generic row component, but for now we simply render flags. */}
                     </li>
                 ))}
             </ul>
+
+            {hasMore && (
+                <button
+                    onClick={() => setShowAll(v => !v)}
+                    className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 text-brand-warningText font-bold text-[length:var(--font-sm)] rounded-xl hover:bg-brand-warningLight transition-colors focus:outline-none focus:ring-2 focus:ring-brand-warning focus:ring-opacity-50"
+                >
+                    {showAll ? (
+                        <><ChevronUp size={18} /> Show fewer items</>
+                    ) : (
+                        <><ChevronDown size={18} /> Show all {flags.length} items</>
+                    )}
+                </button>
+            )}
         </Card>
     );
 }

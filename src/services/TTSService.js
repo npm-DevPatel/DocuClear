@@ -3,41 +3,85 @@
 // API: Web Speech API — window.speechSynthesis (built-in, zero cost)
 
 /**
+ * Returns true if the browser supports Web Speech API
+ */
+export function isSupported() {
+    return 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+}
+
+/**
  * Speaks the given text aloud using the browser's speech synthesis.
  * @param {string} text - The text to speak
  * @param {TTSOptions} options - Configuration options
  * @returns {Promise<void>} Resolves when speech ends, rejects on error
  */
 export async function speak(text, options = {}) {
-    // TODO (Teammate 3):
-    // 1. Check if window.speechSynthesis exists; throw TTSNotSupportedError if not
-    // 2. Cancel any ongoing speech: window.speechSynthesis.cancel()
-    // 3. Create a new SpeechSynthesisUtterance(text)
-    // 4. Configure the utterance:
-    //    - utterance.rate = options.rate ?? 0.85
-    //    - utterance.pitch = options.pitch ?? 1.0
-    //    - utterance.volume = options.volume ?? 1.0
-    //    - utterance.lang = options.lang ?? 'en-GB'
-    // 5. Select the best available voice
-    // 6. Set utterance.onend and utterance.onerror callbacks
-    // 7. window.speechSynthesis.speak(utterance)
+    if (!isSupported()) {
+        throw new Error('Text-to-Speech is not supported in this browser.');
+    }
 
-    throw new Error('TODO: TTSService.speak not yet implemented by Teammate 3');
+    // Cancel any ongoing speech before starting new
+    window.speechSynthesis.cancel();
+
+    return new Promise((resolve, reject) => {
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        utterance.rate = options.rate ?? 0.85;
+        utterance.pitch = options.pitch ?? 1.0;
+        utterance.volume = options.volume ?? 1.0;
+        
+        // Voice Selection Logic
+        const targetLang = options.lang || 'en';
+        const isSwahili = targetLang.startsWith('sw');
+        
+        // Provide standard language hints to the engine
+        utterance.lang = isSwahili ? 'sw-KE' : 'en-GB';
+
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+            let selectedVoice = null;
+            
+            if (isSwahili) {
+                // Try to find an exact Swahili voice
+                selectedVoice = voices.find(v => v.lang.startsWith('sw'));
+            } else {
+                // Try to find a Kenyan English voice, fallback to British, fallback to any English
+                selectedVoice = voices.find(v => v.lang === 'en-KE') 
+                    || voices.find(v => v.lang === 'en-GB')
+                    || voices.find(v => v.lang.startsWith('en'));
+            }
+            
+            if (selectedVoice) {
+                utterance.voice = selectedVoice;
+            }
+        }
+
+        utterance.onend = () => resolve();
+        utterance.onerror = (e) => {
+            // If the user manually cancelled it, don't treat it as a crash
+            if (e.error === 'canceled' || e.error === 'interrupted') {
+                resolve();
+            } else {
+                reject(e);
+            }
+        };
+
+        window.speechSynthesis.speak(utterance);
+    });
 }
 
 export function stopSpeaking() {
-    // window.speechSynthesis.cancel()
-    throw new Error('TODO: TTSService.stopSpeaking not yet implemented');
+    if (isSupported()) {
+        window.speechSynthesis.cancel();
+    }
 }
 
 export function isSpeaking() {
-    // return window.speechSynthesis.speaking
-    throw new Error('TODO: TTSService.isSpeaking not yet implemented');
+    return isSupported() ? window.speechSynthesis.speaking : false;
 }
 
 export function getAvailableVoices() {
-    // return window.speechSynthesis.getVoices()
-    throw new Error('TODO: TTSService.getAvailableVoices not yet implemented');
+    return isSupported() ? window.speechSynthesis.getVoices() : [];
 }
 
 /**

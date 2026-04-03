@@ -166,7 +166,7 @@ export function ChatPage() {
             type: APP_ACTIONS.SET_SIMPLIFIED_RESULT,
             payload: {
                 ...item,
-                firestoreId: item.id.startsWith('local_') ? null : item.id
+                firestoreId: item.id?.startsWith('local_') ? null : item.id
             }
         });
         // Scroll to top

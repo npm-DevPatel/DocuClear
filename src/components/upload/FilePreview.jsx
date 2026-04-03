@@ -5,7 +5,7 @@ import { X, FileText, Image as ImageIcon, FileType } from 'lucide-react';
 
 function FileIcon({ mimeType }) {
     if (mimeType === 'application/pdf') return <FileText size={32} className="text-red-500" />;
-    if (mimeType.startsWith('image/')) return <ImageIcon size={32} className="text-blue-500" />;
+    if (mimeType && mimeType.startsWith('image/')) return <ImageIcon size={32} className="text-blue-500" />;
     return <FileType size={32} className="text-brand-primary" />;
 }
 
@@ -41,8 +41,8 @@ export function FilePreview({ files = [], onRemove }) {
                             {file.name}
                         </h4>
                         <div className="flex items-center gap-2 mt-0.5 text-[length:var(--font-sm)] text-neutral-500">
-                            <span>{formatFileSize(file.size)}</span>
-                            {file.type.startsWith('image/') && (
+                            <span>{formatFileSize(file.size || 0)}</span>
+                            {file.type?.startsWith('image/') && (
                                 <>
                                     <span className="w-1 h-1 bg-neutral-300 rounded-full" />
                                     <span className="text-blue-500 font-medium">✨ Will be enhanced</span>

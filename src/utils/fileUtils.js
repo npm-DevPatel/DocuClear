@@ -9,7 +9,7 @@ export function formatFileSize(bytes) {
 export function getFileTypeLabel(mimeType) {
     if (!mimeType) return 'Document';
     if (mimeType === 'application/pdf') return 'PDF Document';
-    if (mimeType.startsWith('image/')) return 'Image File';
+    if (mimeType && mimeType.startsWith('image/')) return 'Image File';
     if (mimeType.includes('wordprocessingml')) return 'Word Document';
     return 'Document';
 }
@@ -17,7 +17,7 @@ export function getFileTypeLabel(mimeType) {
 export function getFileTypeIcon(mimeType) {
     if (!mimeType) return 'File';
     if (mimeType === 'application/pdf') return 'FileText';
-    if (mimeType.startsWith('image/')) return 'Image';
+    if (mimeType && mimeType.startsWith('image/')) return 'Image';
     if (mimeType.includes('wordprocessingml')) return 'FileType';
     return 'File';
 }
